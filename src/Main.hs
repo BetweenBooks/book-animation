@@ -7,32 +7,43 @@ import Diagrams.Prelude
 import Diagrams.Backend.Cairo.CmdLine
 
 main :: IO ()
-main = 
-  mainWith d >> putStrLn "Done!"
+main =
+  -- mainWith d >> putStrLn "Done!"
+  -- mainWith d' >> putStrLn "Done!"
+  mainWith stacked >> putStrLn "Done!"
+
+-- 160 frames
+d' :: Int -> Diagram B
+d' idx = frame
+  where
+    frame = allFrames !! idx
+
+stacked :: Diagram B
+stacked = vcat allFrames
 
 
 d :: [(Diagram B, Int)]
-d = zip fullAnimation (repeat 10)
+d = zip allFrames (repeat 10)
   where
     speed = 10
 
+allFrames =
+  map mkFrame scrunchFrames
+  ++ map mkFrame slideUpFrames
+  ++ map mkFrame slideAcrossFrames
+  ++ map mkFrame settleInCenterFrames
+  ++ map mkFrame placeDownFrames
+  ++ map mkFrame placeFlatFrames
+  where
     scrunchFrames        = map scrunchUp [20 .. 40]
     slideUpFrames        = map (slideUp $ last scrunchFrames) [0 .. 30]
     slideAcrossFrames    = map (slideAcross $ last slideUpFrames) [1 .. 30]
     settleInCenterFrames = map (settleInCenter 30 $ last slideAcrossFrames) [0 .. 30]
-    placeDownFrames      = map (placeDown 30 $ last settleInCenterFrames) [0 .. 30]
+    placeDownFrames      = map (placeDown 30 $ last settleInCenterFrames) [1 .. 30]
     placeFlatFrames      = map (placeFlat 15 $ last placeDownFrames) [0 .. 15]
 
-    fullAnimation = 
-           map mkFrame scrunchFrames
-        ++ map mkFrame slideUpFrames
-        ++ map mkFrame slideAcrossFrames
-        ++ map mkFrame settleInCenterFrames
-        ++ map mkFrame placeDownFrames
-        ++ map mkFrame placeFlatFrames
 
-
-type Bezier = (V2 Double, V2 Double, V2 Double) 
+type Bezier = (V2 Double, V2 Double, V2 Double)
 
 
 placeFlat :: Integer -> Bezier -> Integer -> Bezier
@@ -57,7 +68,7 @@ placeDown m (c1', c2', x2') i = (c1, c2, x2)
     c2 = c2' - (c2' * r2 (r, r) + r2 (1-r, 1-r) * r2 (1,0.5))
     x2 = x2' * r2 (1 - r', 1 - r') + r2 (r', r') * r2 (-2.5,1)
 
--- | 
+-- |
 settleInCenter :: Integer -> Bezier -> Integer -> Bezier
 settleInCenter m (c1', c2', x2') i = (c1, c2, x2)
   where
@@ -83,7 +94,7 @@ slideUp (c1', c2', x2') i = (c1, c2, x2)
   where
     j = fromInteger i
     c1 = c1' + r2 (0, 0 - j * 0.005)
-    c2 = c2' -- + r2 (0 - j * 0.03, 0)
+    c2 = c2'
     x2 = x2' + r2 (0 - j * 0.01, j * 0.04)
 
 scrunchUp :: Integer -> Bezier
@@ -99,18 +110,21 @@ initialFold i = (c1, c2, x2)
     [c1, c2, x2] = map r2 [(1, 0), (2 + j *0.02, j*0.02), (3 - j*0.01, 0)]
 
 mkFrame :: Bezier -> Diagram B
-mkFrame (c1, c2, x2) = 
+mkFrame (c1, c2, x2) =
   ( bez
-  <> square 10
-  <> hrule 5.8 # translate (r2 (0, -0.25))
-  <> b (initialFold 20 # reflectX)  # (translate (r2 (0, -0.1)))
-  <> b (initialFold 20)  # (translate (r2 (0, -0.1)))
+  <> (square 6 # lw none)
+  <> base
+  <> base # translate (r2 (0, -0.3)) # lw 0.6
+  <> hrule 5.8 # translate (r2 (0, -0.7)) # lw 0.9
   )
-  # bg white
-  # lw 4
+  # lw 0.7
+  # lc black
   where
+    base = b (initialFold 20 # reflectX)  # (translate (r2 (0, -0.1)))
+           <> b (initialFold 20)  # (translate (r2 (0, -0.1)))
     b (c1, c2, x2) = illustrateBezier c1 c2 x2
     bez = illustrateBezier c1 c2 x2
+    s = sRGB24read "00aaff"
 
 
 illustrateBezier c1 c2 x2

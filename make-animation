@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -xe
+
+mkdir -p output/frames
+
+stack build
+
+seq -w 0 158 | xargs -I {} -n 1 -P 8 \
+  stack run -- -o output/frames/frame{}.svg -w 30 {}
+
+# Done by 'svg-stack'
+# cd output/frames && montage *.svg \
+#   -geometry 30x30+0+0 \
+#   -tile 1x ../book-animation.svg
